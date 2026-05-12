@@ -1,0 +1,39 @@
+[project]
+name = "substack-url-tool"
+version = "0.1.0"
+description = "Substack article URL -> CleanText (UTF-8, stdout)."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Jonathan Moregard", email = "jonathan.more@hotmail.com" }]
+requires-python = ">=3.11"
+dependencies = [
+    "trafilatura>=2.0,<3",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-httpx>=0.30",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+substack-url-tool = "substack_url_tool.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/substack_url_tool"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
