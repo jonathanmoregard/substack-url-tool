@@ -78,3 +78,26 @@ def test_cli_paywall_warning(httpx_mock: HTTPXMock, capsys, monkeypatch):
     )
     cli.main(["https://foo.substack.com/p/post-slug"])
     assert "paywall detected" in capsys.readouterr().err
+
+
+def test_cli_markdown_format_prepends_h1(httpx_mock: HTTPXMock, capsys):
+    httpx_mock.add_response(
+        url="https://foo.substack.com/p/post-slug",
+        text=_ARTICLE_HTML,
+    )
+    rc = cli.main(["--format", "markdown", "https://foo.substack.com/p/post-slug"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.startswith("# ")
+    assert out.split("\n")[1] == ""
+
+
+def test_cli_default_format_is_txt(httpx_mock: HTTPXMock, capsys):
+    httpx_mock.add_response(
+        url="https://foo.substack.com/p/post-slug",
+        text=_ARTICLE_HTML,
+    )
+    rc = cli.main(["https://foo.substack.com/p/post-slug"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert not out.startswith("# ")

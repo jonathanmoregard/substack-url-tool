@@ -71,6 +71,25 @@ def test_clean_substack_is_case_insensitive_on_cta():
     assert "share this post" not in cleaned
 
 
+def test_clean_substack_strips_markdown_wrapped_ctas():
+    """Markdown-mode trafilatura emits CTAs wrapped in emphasis."""
+    text = "Body one.\n\n**Subscribe**\n\n*Share*\n\n__Leave a comment__\n\nBody two."
+    cleaned = clean_substack(text)
+    assert "Subscribe" not in cleaned
+    assert "Share" not in cleaned
+    assert "Leave a comment" not in cleaned
+    assert "Body one." in cleaned
+    assert "Body two." in cleaned
+
+
+def test_clean_substack_strips_markdown_footnote_marker():
+    text = "Para one.\n\n[^1]\n\nPara two."
+    cleaned = clean_substack(text)
+    assert "[^1]" not in cleaned
+    assert "Para one." in cleaned
+    assert "Para two." in cleaned
+
+
 def test_clean_substack_trims_leading_and_trailing_blanks():
     text = "\n\n\nReal content.\n\n\n"
     assert clean_substack(text) == "Real content."

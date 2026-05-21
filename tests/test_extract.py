@@ -43,3 +43,21 @@ def test_extract_strips_subscribe_cta_via_substack_postprocess():
     )
     title, body = extract_article(html)
     assert "Cats sleep" in body
+
+
+def test_extract_markdown_preserves_emphasis():
+    html = _BASE_HTML.replace(
+        "Cats sleep up to sixteen hours a day.",
+        "Cats sleep up to <strong>sixteen</strong> hours a day.",
+    )
+    _, body = extract_article(html, output_format="markdown")
+    assert "**sixteen**" in body or "__sixteen__" in body
+
+
+def test_extract_markdown_preserves_blockquote():
+    html = _BASE_HTML.replace(
+        "<article>",
+        '<article><blockquote><p>An aphorism about cats.</p></blockquote>',
+    )
+    _, body = extract_article(html, output_format="markdown")
+    assert "> An aphorism" in body or "An aphorism" in body

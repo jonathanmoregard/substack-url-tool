@@ -16,9 +16,20 @@ EXIT_INVALID = 3
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="substack-url-tool",
-        description="Substack article URL -> CleanText (UTF-8) on stdout.",
+        description=(
+            "Substack article URL -> CleanText (UTF-8) on stdout. "
+            "Use --format markdown to preserve bold/italic/headers/blockquotes "
+            "for downstream prose-decorate / SSML pipelines."
+        ),
     )
     p.add_argument("url", help="Article URL (http:// or https://).")
+    p.add_argument(
+        "-f", "--format",
+        choices=["txt", "markdown"],
+        default="txt",
+        help="Output format. 'txt' (default) is back-compat plain text; "
+             "'markdown' preserves inline formatting for prose-decorate.",
+    )
     return p
 
 
@@ -41,6 +52,12 @@ def _fallback_title(url: str) -> str:
     return last.replace("-", " ").replace("_", " ").strip()
 
 
+def _format_output(title: str, body: str, fmt: str) -> str:
+    if fmt == "markdown":
+        return f"# {title}\n\n{body.rstrip()}\n"
+    return f"{title}\n\n{body.rstrip()}\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     url = args.url
@@ -60,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         _log("warning: paywall detected, output may be truncated")
 
     try:
-        title, body = extract.extract_article(html)
+        title, body = extract.extract_article(html, output_format=args.format)
     except extract.ExtractionError as e:
         _log(f"error: {e}")
         return EXIT_EXTRACT
@@ -73,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_EXTRACT
 
     title = title.strip() or _fallback_title(url)
-    sys.stdout.write(f"{title}\n\n{body.rstrip()}\n")
+    sys.stdout.write(_format_output(title, body, args.format))
     return EXIT_OK
 
 

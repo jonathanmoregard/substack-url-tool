@@ -4,19 +4,22 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
+# Match noise lines whether trafilatura emitted them as plain text or
+# wrapped them in markdown emphasis (`**Subscribe**`, `_Share_`, etc.).
 _NOISE = re.compile(
-    r"^(?:"
+    r"^[*_]{0,2}(?:"
     r"subscribe"
     r"|share"
     r"|share this post"
     r"|leave a comment"
     r"|thanks for reading.*"
     r"|if you (?:liked|enjoyed) this.*"
-    r")$",
+    r")[*_]{0,2}$",
     re.IGNORECASE,
 )
 
-_FOOTNOTE_REF = re.compile(r"^(?:\[\d+\]|\d+\.)$")
+# Footnote ref markers: [1], 1., or markdown link form [^1]
+_FOOTNOTE_REF = re.compile(r"^(?:\[\^?\d+\]|\d+\.)$")
 
 _PAYWALL_MARKERS = (
     'class="paywall"',
