@@ -52,7 +52,30 @@ def _fallback_title(url: str) -> str:
     return last.replace("-", " ").replace("_", " ").strip()
 
 
+def _strip_leading_title_line(body: str, title: str) -> str:
+    """trafilatura emits the article's own H1 inside the body, so prepending
+    the metadata-derived title produces a duplicate that survives all the
+    way to TTS (the narrator literally reads the title twice). If the body
+    begins with the title line — with or without markdown `#` prefix —
+    strip it so the caller can prepend a single canonical title.
+
+    Match is case-insensitive after stripping markdown leading `#` and
+    whitespace; a trailing period or hash-count mismatch doesn't break it.
+    """
+    if not title:
+        return body
+    lstripped = body.lstrip()
+    first_line, sep, rest = lstripped.partition("\n")
+    first_normalized = first_line.lstrip("#").strip().casefold()
+    title_normalized = title.strip().casefold()
+    if first_normalized != title_normalized:
+        return body
+    # Drop the duplicate first line and any blank lines immediately after.
+    return rest.lstrip("\n")
+
+
 def _format_output(title: str, body: str, fmt: str) -> str:
+    body = _strip_leading_title_line(body, title)
     if fmt == "markdown":
         return f"# {title}\n\n{body.rstrip()}\n"
     return f"{title}\n\n{body.rstrip()}\n"

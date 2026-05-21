@@ -101,3 +101,39 @@ def test_cli_default_format_is_txt(httpx_mock: HTTPXMock, capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert not out.startswith("# ")
+
+
+def test_cli_does_not_duplicate_title_in_markdown(httpx_mock: HTTPXMock, capsys):
+    """trafilatura's markdown body includes the article's H1; the CLI
+    must not also prepend the metadata title on top of it. Past bug:
+    TTS read the title twice."""
+    httpx_mock.add_response(
+        url="https://foo.substack.com/p/post-slug",
+        text=_ARTICLE_HTML,
+    )
+    rc = cli.main(["--format", "markdown", "https://foo.substack.com/p/post-slug"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    title_h1_lines = [line for line in out.split("\n") if line.startswith("# ")]
+    assert len(title_h1_lines) == 1, f"expected 1 H1 title, got: {title_h1_lines}"
+
+
+def test_cli_txt_default_does_not_duplicate_title(httpx_mock: HTTPXMock, capsys):
+    httpx_mock.add_response(
+        url="https://foo.substack.com/p/post-slug",
+        text=_ARTICLE_HTML,
+    )
+    rc = cli.main(["https://foo.substack.com/p/post-slug"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    # The title text appears at most twice across the output (line 1
+    # = title; sometimes title also occurs naturally inside body
+    # references). What we're guarding against is the
+    # title-as-line-1-AND-title-as-line-3 pattern.
+    lines = [ln for ln in out.split("\n") if ln.strip()]
+    if len(lines) >= 2:
+        # First line is the title, second non-blank line must NOT also
+        # be just the title (i.e., the article body has real content)
+        assert lines[0].strip() != lines[1].strip(), (
+            f"title duplicated on consecutive non-blank lines: {lines[:3]}"
+        )
